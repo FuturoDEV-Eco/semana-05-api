@@ -12,44 +12,46 @@ const conexao = new Pool({
     database: 'api_pets'
 })
 
-
 /* VERBO HTTP, path, implementação */
 
 app.get('/bemvindo', (request, response) => {
     response.send("Bem vindo usuario")
 })
 
-
-app.post('/vacinas', (request, response) => {
-
-})
-
 /* Cadastrar - Body (corpo) */
-app.post('/pets', (request, response) => {
-    const dados = request.body
+app.post('/pets',  async (request, response) => {
+    try {
+        const dados = request.body
 
-    conexao.query(
-        `INSERT INTO pets 
-         (
-            nome,
-            idade,
-            raca,
-            tipo,
-            responsavel
-        )
-        values
-        (
-            '${dados.nome}',
-            ${dados.idade},
-            '${dados.raca}',
-            '${dados.tipo}',
-            '${dados.responsavel}' 
-        )
-    `);
+        if (!dados.nome || !dados.tipo || !dados.idade || !dados.raca) {
+            return response.send("O nome, o tipo, a raça e a idade são obrigatórios")
+        }
 
-    console.log(dados)
+         await conexao.query(
+            `INSERT INTO pets 
+             (
+                nome,
+                idade,
+                raca,
+                tipo,
+                responsavel
+            )
+            values
+            (
+                $1,
+                $2,
+                $3,
+                $4,
+                $5
+            )
+        `, [dados.nome, dados.idade, dados.raca, dados.tipo, dados.responsavel]);
 
-    response.send("entrei aqui")
+        console.log(dados)
+
+        response.status(201).json({ mensagem: 'Criado com sucesso' })
+    } catch {
+       response.status(500).json({mensagem: 'Não possível cadastrar o pet'})
+    }
 })
 
 app.listen(3000, () => {
