@@ -11,7 +11,6 @@ const conexao = new Pool({
     database: 'api_pets'
 })
 
-
 petsRoutes.put("/:id", async (request, response) => {
     const dados = request.body
     const id = request.params.id
