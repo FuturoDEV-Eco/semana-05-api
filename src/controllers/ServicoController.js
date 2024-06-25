@@ -1,9 +1,19 @@
-/* 
+
+/*
+const criar = () => {
+
+}
+
+module.exports = {criar}
+*/
+
+/*
 module.exports = {
     criar: async () => {
     }
 }
-    */
+*/
+
 
 const { Pool } = require('pg')
 
@@ -16,6 +26,24 @@ const conexao = new Pool({
 })
 
 class ServicoController {
+
+    async listarTodos(request, response) {
+        const query = request.query
+
+        if (query.filtro) {
+            const servicos = await conexao.query(`
+                    select * from servicos
+                    where nome ilike $1
+                    or descricao ilike $1
+                    or cast(preco as varchar) ilike $1
+                `, [`%${query.filtro}%`])
+            response.json(servicos.rows)
+        } else {
+            const servicos = await conexao.query("select * from servicos")
+            response.json(servicos.rows)
+        }
+
+    }
 
     async criar(request, response) {
 
@@ -42,6 +70,8 @@ class ServicoController {
             response.status(500).json({ mensagem: 'Não possivel cadastrar o serviço' })
         }
     }
+
+
 }
 
 module.exports = new ServicoController()
