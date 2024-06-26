@@ -28,21 +28,24 @@ const conexao = new Pool({
 class ServicoController {
 
     async listarTodos(request, response) {
-        const query = request.query
+        try {
+            const query = request.query
+            if (query.filtro) {
+                const servicos = await conexao.query(`
+                        select * from servicos
+                        where nome ilike $1
+                        or descricao ilike $1
+                        or cast(preco as varchar) ilike $1
+                    `, [`%${query.filtro}%`])
+                response.json(servicos.rows)
+            } else {
+                const servicos = await conexao.query("select * from servicos")
+                response.json(servicos.rows)
+            }
 
-        if (query.filtro) {
-            const servicos = await conexao.query(`
-                    select * from servicos
-                    where nome ilike $1
-                    or descricao ilike $1
-                    or cast(preco as varchar) ilike $1
-                `, [`%${query.filtro}%`])
-            response.json(servicos.rows)
-        } else {
-            const servicos = await conexao.query("select * from servicos")
-            response.json(servicos.rows)
+        } catch (error) {
+            response.status(500).json({ mensagem: 'Não possivel listar os serviços' })
         }
-
     }
 
     async criar(request, response) {
@@ -71,6 +74,47 @@ class ServicoController {
         }
     }
 
+    async listarUm(request, response) {
+        try {
+            const id = request.params.id
+
+            const servico = await conexao.query(`
+            select id,nome from servicos
+            where id = $1
+            `, [id])
+
+            if (servico.rowCount === 0) {
+                return response.status(404).json(
+                    { mensagem: 'Não foi encontrado o serviço' }
+                )
+            }
+
+            response.json(servico.rows[0])
+        } catch (error) {
+            response.status(500).json({ mensagem: 'Não possivel listar o serviço' })
+        }
+    }
+
+    async deletar(request, response) {
+        try {
+          const id = request.params.id 
+
+          const servico = await conexao.query(`
+            DELETE FROM servicos
+            where id = $1
+            `, [id])
+
+            if(servico.rowCount === 0) {
+                return response.status(404).json(
+                    { mensagem: 'Não foi encontrado o serviço' }
+                )
+            }
+
+            response.status(204).json()
+        } catch (error) {
+            response.status(500).json({ mensagem: 'Não possivel deletar o serviço' })
+        }
+    }
 
 }
 
