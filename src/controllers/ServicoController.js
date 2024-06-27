@@ -97,14 +97,14 @@ class ServicoController {
 
     async deletar(request, response) {
         try {
-          const id = request.params.id 
+            const id = request.params.id
 
-          const servico = await conexao.query(`
+            const servico = await conexao.query(`
             DELETE FROM servicos
             where id = $1
             `, [id])
 
-            if(servico.rowCount === 0) {
+            if (servico.rowCount === 0) {
                 return response.status(404).json(
                     { mensagem: 'Não foi encontrado o serviço' }
                 )
@@ -113,6 +113,39 @@ class ServicoController {
             response.status(204).json()
         } catch (error) {
             response.status(500).json({ mensagem: 'Não possivel deletar o serviço' })
+        }
+    }
+
+    async atualizar(request, response) {
+        try {
+            const dados = request.body
+            const id = request.params.id
+
+            const dadosDoServico = await conexao.query(`
+                    select * from servicos
+                    where id = $1
+                `, [id])
+
+            await conexao.query(`
+                    update servicos
+                    set nome = $1,
+                    descricao = $2,
+                    preco = $3
+                    where id = $4
+                `, [
+                    dados.nome || dadosDoServico.rows[0].nome ,
+                    dados.descricao || dadosDoServico.rows[0].descricao ,
+                    dados.preco || dadosDoServico.rows[0].preco, 
+                    id
+                ])
+
+            response.json({ mensagem: 'atualizado com sucesso' })
+
+        } catch (error) {
+            response.status(500).json({
+                mensagem: 'Não possivel atualizar o serviço'
+            })
+
         }
     }
 
